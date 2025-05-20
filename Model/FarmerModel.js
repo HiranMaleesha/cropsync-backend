@@ -19,6 +19,16 @@ const farmerSchema = new mongoose.Schema({
     required: true,
     enum: ['Northern', 'Eastern', 'Western', 'Southern', 'Central']
   },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  firebaseUid: {
+    type: String,
+    required: true,
+    unique: true
+  },
   crops: [{
     name: {
       type: String,

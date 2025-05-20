@@ -28,27 +28,72 @@ const getFarmerById = async (req, res) => {
 // Create new farmer
 const createFarmer = async (req, res) => {
   try {
-    const { farmerName, idNumber, phoneNumber, region, crops } = req.body;
+    const { farmerName, idNumber, phoneNumber, region, email, firebaseUid, crops } = req.body;
     
+    // Validate required fields
+    if (!farmerName || !idNumber || !phoneNumber || !region || !email || !firebaseUid || !crops) {
+      return res.status(400).json({ 
+        message: 'Missing required fields',
+        required: ['farmerName', 'idNumber', 'phoneNumber', 'region', 'email', 'firebaseUid', 'crops']
+      });
+    }
+
     // Check if farmer with same ID number exists
-    const existingFarmer = await Farmer.findOne({ idNumber });
-    if (existingFarmer) {
+    const existingFarmerById = await Farmer.findOne({ idNumber });
+    if (existingFarmerById) {
       return res.status(400).json({ message: 'Farmer with this ID number already exists' });
     }
 
+    // Check if farmer with same email exists
+    const existingFarmerByEmail = await Farmer.findOne({ email });
+    if (existingFarmerByEmail) {
+      return res.status(400).json({ message: 'Farmer with this email already exists' });
+    }
+
+    // Check if farmer with same Firebase UID exists
+    const existingFarmerByUid = await Farmer.findOne({ firebaseUid });
+    if (existingFarmerByUid) {
+      return res.status(400).json({ message: 'Farmer with this Firebase UID already exists' });
+    }
+
+    // Create new farmer
     const farmer = new Farmer({
       farmerName,
       idNumber,
       phoneNumber,
       region,
-      crops
+      email,
+      firebaseUid,
+      crops: crops.map(crop => ({
+        name: crop.name,
+        area: Number(crop.area)
+      }))
     });
 
     const savedFarmer = await farmer.save();
-    res.status(201).json({ message: 'Farmer registered successfully', farmer: savedFarmer });
+    res.status(201).json({ 
+      message: 'Farmer registered successfully', 
+      farmer: savedFarmer 
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error creating farmer' });
+    console.error('Error creating farmer:', err);
+    // Send more detailed error message
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        details: Object.values(err.errors).map(e => e.message)
+      });
+    }
+    if (err.code === 11000) {
+      return res.status(400).json({ 
+        message: 'Duplicate key error', 
+        field: Object.keys(err.keyPattern)[0]
+      });
+    }
+    res.status(500).json({ 
+      message: 'Error creating farmer',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 };
 
@@ -90,10 +135,23 @@ const deleteFarmer = async (req, res) => {
   }
 };
 
+// Check if farmer exists by Firebase UID
+const checkFarmerByUid = async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const farmer = await Farmer.findOne({ firebaseUid: uid });
+    res.json({ exists: !!farmer });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error checking farmer' });
+  }
+};
+
 module.exports = {
   getAllFarmers,
   getFarmerById,
   createFarmer,
   updateFarmer,
-  deleteFarmer
+  deleteFarmer,
+  checkFarmerByUid
 }; 
