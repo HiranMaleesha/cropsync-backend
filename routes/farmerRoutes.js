@@ -6,7 +6,8 @@ const {
   createFarmer,
   checkFarmerByUid,
   updateFarmer,
-  deleteFarmer
+  deleteFarmer,
+  getFarmerByEmail
 } = require('../Controllers/FarmerController');
 
 // GET all farmers
@@ -26,5 +27,8 @@ router.put('/:id', updateFarmer);
 
 // DELETE farmer
 router.delete('/:id', deleteFarmer);
+
+// Get farmer by email
+router.get('/email/:email', getFarmerByEmail);
 
 module.exports = router; 

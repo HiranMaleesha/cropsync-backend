@@ -147,11 +147,34 @@ const checkFarmerByUid = async (req, res) => {
   }
 };
 
+// Get farmer by email
+const getFarmerByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const farmer = await Farmer.findOne({ email });
+    
+    if (!farmer) {
+      return res.status(404).json({ message: "Farmer not found" });
+    }
+
+    res.status(200).json(farmer);
+  } catch (error) {
+    console.error("Error fetching farmer by email:", error);
+    res.status(500).json({ message: "Error fetching farmer profile" });
+  }
+};
+
 module.exports = {
   getAllFarmers,
   getFarmerById,
   createFarmer,
   updateFarmer,
   deleteFarmer,
-  checkFarmerByUid
+  checkFarmerByUid,
+  getFarmerByEmail,
 }; 
